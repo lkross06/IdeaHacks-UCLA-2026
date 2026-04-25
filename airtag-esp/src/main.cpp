@@ -3,12 +3,14 @@
 #include <Adafruit_L3GD20_U.h>
 #include <Adafruit_LSM303_U.h>
 #include <WiFi.h>
+#include <WiFiUdp.h>
 #include <Arduino.h>
 
 const char* ssid = "Lucas's iPhone";
 const char* password = "lebronpookie123";
 const char* laptop_ip = "172.20.10.6";
 const int udp_port = 4210;
+const int local_port = 4211;
 WiFiUDP udp;
 
 Adafruit_L3GD20_Unified       gyro = Adafruit_L3GD20_Unified(20);
@@ -16,10 +18,12 @@ Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(30301);
 Adafruit_LSM303_Mag_Unified   mag   = Adafruit_LSM303_Mag_Unified(30302);
 sensors_event_t a, m, g;
 
-#define I2C_SDA 11  //black
-#define I2C_SCL 12  //brown
+#define I2C_SDA 21  //blue
+#define I2C_SCL 22  //purple
 
-struct __attribute__((packed)) SensorPacket {
+//NOTE: not packing this because struct.unpack cannot unpack a single bit (bool)
+struct SensorPacket {
+  bool  id;           //should = 1 for airtag IMU, = 0 for tripod IMU
   float ax, ay, az;
   float gx, gy, gz;
   float mx, my, mz;
@@ -30,22 +34,25 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  Serial.println("9-DOF Sensor Test (L3GD20H + LSM303)");
-
+  //init I2C
   Wire.begin(I2C_SDA, I2C_SCL);
-  Wire.setClock(400000); //400 kHz
+  Wire.setClock(400000); //4kHz
 
   if(!accel.begin() || !mag.begin() || !gyro.begin()) {
-    Serial.println("Could not find a valid 9-DOF sensor, check wiring!");
+    Serial.println("IMU initialization failed.");
     while(1);
   }
 
+  //connect to personal hotspot
+  Serial.print("Connecting to WiFi... ");
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
-    delay(100);
+    delay(500);
     Serial.print(".");
   }
-
+  Serial.println(" success!");
+  udp.begin(local_port);
+  
   Serial.println("Setup complete!");
   delay(500);
 }
@@ -54,6 +61,8 @@ void loop() {
   accel.getEvent(&a);
   mag.getEvent(&m);
   gyro.getEvent(&g);
+
+  packet.id = 0;
 
   packet.ax = a.acceleration.x;
   packet.ay = a.acceleration.y;
@@ -67,9 +76,10 @@ void loop() {
   packet.my = m.magnetic.y;
   packet.mz = m.magnetic.z;
 
-  udp.beginPacket(laptop_ip, udp_port);
-  udp.write((uint8_t*)&packet, sizeof(packet)); //write raw bytes
-  udp.endPacket();
+  if (udp.beginPacket(laptop_ip, udp_port)) {
+    udp.write((uint8_t*)&packet, sizeof(packet));
+    udp.endPacket();
+  }
 
-  delay(10);  //magnetometer bottlenecks at 100Hz
+  delay(10); 
 }

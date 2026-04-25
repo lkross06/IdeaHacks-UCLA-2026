@@ -1,9 +1,6 @@
 import socket
 import struct
 
-from pos import *
-
-# Listen on all interfaces, Port 4210
 UDP_IP = "0.0.0.0"
 UDP_PORT = 4210
 
@@ -14,8 +11,8 @@ print(f"Listening on port {UDP_PORT}...")
 
 try:
     while True:
-        data, addr = sock.recvfrom(512) #sizeof(SensorPacket) == 36U
-        values = struct.unpack('fffffffff', data)
+        data, addr = sock.recvfrom(512) #sizeof(SensorPacket) == 40U
+        values = struct.unpack('bfffffffff', data)
         print(values)
 except KeyboardInterrupt:
     print("Shutting down...");
