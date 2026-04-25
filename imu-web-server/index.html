@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>IMU Tracker</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+    canvas {
+      border: 2px solid #333;
+      background-color: white;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+
+<body>
+<canvas id="c" width="600" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+// Dynamically connect to the server's websocket
+const socket = new WebSocket(`ws://${window.location.host}/ws`);
+
+let path = [];
+
+socket.onmessage = (event) => {
+  let [x, y] = event.data.split(",").map(Number);
+  
+  // Store the path point
+  path.push([x, y]);
+
+  // Keep path length manageable (last 1000 points)
+  if (path.length > 1000) path.shift();
+
+  draw();
+};
+
+function draw() {
+  ctx.clearRect(0, 0, 600, 600);
+
+  // Draw Path
+  ctx.beginPath();
+  ctx.strokeStyle = "#007bff";
+  ctx.lineWidth = 2;
+
+  for (let i = 0; i < path.length; i++) {
+    // Center is 300,300. Multiplied by 50 for scaling.
+    let x = 300 + path[i][0] * 50;
+    let y = 300 - path[i][1] * 50;
+
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Draw Origin Label
+  ctx.fillStyle = "black";
+  ctx.font = "12px Arial";
+  ctx.fillText("(0,0) - Origin", 305, 295);
+  
+  // Draw current position dot
+  if (path.length > 0) {
+    let lastPoint = path[path.length - 1];
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.arc(300 + lastPoint[0] * 50, 300 - lastPoint[1] * 50, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+</script>
+</body>
+</html>
