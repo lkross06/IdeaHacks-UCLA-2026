@@ -17,10 +17,11 @@ def receive_packet():
     try:
         data, addr = sock.recvfrom(1024)
         # Unpack 9 floats (36 bytes)
-        values = struct.unpack('fffffffff', data)
-        acc = values[0:3]
-        gyro = values[3:6]
-        mag = values[6:9]
-        return acc, gyro, mag
+        values = struct.unpack('bfffffffff', data)
+        id = values[0]
+        acc = values[1:4]
+        gyro = values[4:7]
+        mag = values[7:10]
+        return id, acc, gyro, mag
     except (BlockingIOError, struct.error):
         return None, None, None

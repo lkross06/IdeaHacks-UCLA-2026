@@ -23,7 +23,7 @@ app = FastAPI(lifespan=lifespan)
 async def main_loop():
     """The bridge between connection and physics"""
     while True:
-        acc, gyro, mag = receive_packet()
+        id, acc, gyro, mag = receive_packet()
 
         if acc is not None:
             # Calculate new position

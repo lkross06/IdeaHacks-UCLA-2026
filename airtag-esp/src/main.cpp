@@ -8,7 +8,8 @@
 
 const char* ssid = "Lucas's iPhone";
 const char* password = "lebronpookie123";
-const char* laptop_ip = "172.20.10.6";
+// const char* laptop_ip = "172.20.10.6";
+const char* laptop_ip = "172.20.10.10";
 const int udp_port = 4210;
 const int local_port = 4211;
 WiFiUDP udp;
