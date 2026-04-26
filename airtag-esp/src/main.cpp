@@ -3,7 +3,7 @@
 #include <Adafruit_L3GD20_U.h>
 #include <Adafruit_LSM303_U.h>
 #include <WiFi.h>
-#include <WiFiUdp.h>
+#include <WiFiUDP.h>
 #include <Arduino.h>
 
 const char* ssid = "Lucas's iPhone";
@@ -36,7 +36,7 @@ void setup() {
 
   //init I2C
   Wire.begin(I2C_SDA, I2C_SCL);
-  Wire.setClock(400000); //4kHz
+  Wire.setClock(100000); //4kHz
 
   if(!accel.begin() || !mag.begin() || !gyro.begin()) {
     Serial.println("IMU initialization failed.");
@@ -76,10 +76,9 @@ void loop() {
   packet.my = m.magnetic.y;
   packet.mz = m.magnetic.z;
 
-  if (udp.beginPacket(laptop_ip, udp_port)) {
-    udp.write((uint8_t*)&packet, sizeof(packet));
-    udp.endPacket();
-  }
+  udp.beginPacket(laptop_ip, udp_port);
+  udp.write((uint8_t*)&packet, sizeof(packet));
+  udp.endPacket();
 
-  delay(10); 
+  delay(10);
 }
